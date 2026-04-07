@@ -13,8 +13,8 @@ Open `index.html` in a browser or play at [ppleskov.github.io/cyprus-mouse-defen
 | Action | Desktop | Mobile |
 |--------|---------|--------|
 | Shoot water | Click | Tap |
-| Throw souvlaki bait | Right-click | BAIT button |
-| Start / Restart | Enter | Tap |
+| Throw souvlaki bait | Right-click | BAIT button → tap location |
+| Start / Restart | Tap or Enter | Tap |
 
 ### Enemies
 

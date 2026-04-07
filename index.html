@@ -69,6 +69,7 @@ function initState() {
         // Souvlaki bait
         souvlakiCount: 0,
         bait: null,
+        placingBait: false,
     };
 }
 
@@ -886,19 +887,32 @@ function drawHUD() {
         // Touch button for souvlaki
         if (isTouchDevice) {
             const r = getSouvlakiBtnRect();
-            ctx.fillStyle = 'rgba(255, 153, 68, 0.35)';
+            const placing = state.placingBait;
+            ctx.fillStyle = placing ? 'rgba(255, 153, 68, 0.6)' : 'rgba(255, 153, 68, 0.35)';
             ctx.beginPath();
             ctx.roundRect(r.x, r.y, r.w, r.h, 10);
             ctx.fill();
-            ctx.strokeStyle = 'rgba(255, 153, 68, 0.7)';
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = placing ? '#ffcc44' : 'rgba(255, 153, 68, 0.7)';
+            ctx.lineWidth = placing ? 3 : 2;
             ctx.stroke();
-            ctx.fillStyle = '#ff9944';
+            ctx.fillStyle = placing ? '#fff' : '#ff9944';
             ctx.font = 'bold 11px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('BAIT', r.x + r.w / 2, r.y + r.h / 2 - 5);
+            ctx.fillText(placing ? 'TAP MAP' : 'BAIT', r.x + r.w / 2, r.y + r.h / 2 - 5);
             ctx.font = 'bold 16px monospace';
             ctx.fillText(`${state.souvlakiCount}`, r.x + r.w / 2, r.y + r.h / 2 + 14);
+            ctx.textAlign = 'left';
+        }
+
+        // Placing bait hint — pulsing text
+        if (state.placingBait) {
+            ctx.textAlign = 'center';
+            ctx.fillStyle = `rgba(255, 153, 68, ${0.6 + Math.sin(state.time * 6) * 0.4})`;
+            ctx.font = 'bold 18px monospace';
+            ctx.shadowColor = '#000';
+            ctx.shadowBlur = 4;
+            ctx.fillText('Tap where to throw bait!', canvas.width / 2, canvas.height - 50);
+            ctx.shadowBlur = 0;
             ctx.textAlign = 'left';
         }
     }
@@ -1956,10 +1970,16 @@ canvas.addEventListener('touchstart', (e) => {
         return;
     }
 
-    // Check souvlaki button
+    // Placing bait mode — tap to place
+    if (state.placingBait) {
+        state.placingBait = false;
+        throwSouvlaki(tx, ty);
+        return;
+    }
+
+    // Check souvlaki button — enter placing mode
     if (isTouchDevice && state.souvlakiCount > 0 && hitSouvlakiBtn(tx, ty)) {
-        // Throw bait at center of screen (since no cursor position on mobile)
-        throwSouvlaki(state.mousePos.x + (Math.random() - 0.5) * 100, state.mousePos.y + 120);
+        state.placingBait = true;
         return;
     }
 
