@@ -873,8 +873,27 @@ function drawHUD() {
         ctx.font = 'bold 14px monospace';
         ctx.shadowColor = '#000';
         ctx.shadowBlur = 2;
-        ctx.fillText(`Souvlaki: ${state.souvlakiCount} [RMB]`, 25, 88);
+        ctx.fillText(`Souvlaki: ${state.souvlakiCount}${isTouchDevice ? '' : ' [RMB]'}`, 25, 88);
         ctx.shadowBlur = 0;
+
+        // Touch button for souvlaki
+        if (isTouchDevice) {
+            const r = getSouvlakiBtnRect();
+            ctx.fillStyle = 'rgba(255, 153, 68, 0.35)';
+            ctx.beginPath();
+            ctx.roundRect(r.x, r.y, r.w, r.h, 10);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 153, 68, 0.7)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#ff9944';
+            ctx.font = 'bold 11px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('BAIT', r.x + r.w / 2, r.y + r.h / 2 - 5);
+            ctx.font = 'bold 16px monospace';
+            ctx.fillText(`${state.souvlakiCount}`, r.x + r.w / 2, r.y + r.h / 2 + 14);
+            ctx.textAlign = 'left';
+        }
     }
 
     // Drunk indicator
@@ -952,7 +971,7 @@ function drawTitleScreen(t) {
     ctx.fillStyle = '#ccc';
     ctx.font = '16px monospace';
     const instructions = [
-        'Click to shoot water, RMB to throw souvlaki bait',
+        isTouchDevice ? 'Tap to shoot water' : 'Click to shoot water, RMB to throw souvlaki bait',
         'Cats=1 hit, Lions=3 hits, Tigers=5 hits',
         'Shoot pickups: KEO, Souvlaki, Easter Egg',
         'Black & white cat Zora = good (gives lives)',
@@ -967,7 +986,7 @@ function drawTitleScreen(t) {
     if (blink) {
         ctx.fillStyle = '#4af';
         ctx.font = 'bold 22px monospace';
-        ctx.fillText('Press Enter to Start', canvas.width / 2, canvas.height / 2 + 180);
+        ctx.fillText(isTouchDevice ? 'Tap to Start' : 'Press Enter to Start', canvas.width / 2, canvas.height / 2 + 180);
     }
 
     ctx.shadowBlur = 0;
@@ -1007,7 +1026,7 @@ function drawGameOverScreen(t) {
     if (blink) {
         ctx.fillStyle = '#4af';
         ctx.font = 'bold 20px monospace';
-        ctx.fillText('Press Enter to Play Again', canvas.width / 2, canvas.height / 2 + 90);
+        ctx.fillText(isTouchDevice ? 'Tap to Play Again' : 'Press Enter to Play Again', canvas.width / 2, canvas.height / 2 + 90);
     }
 
     ctx.shadowBlur = 0;
@@ -1806,14 +1825,16 @@ function draw(timestamp) {
         // HUD and cursor (no shake)
         if (state.screen === 'playing') {
             drawHUD();
-            // Drunk crosshair wobble
-            let cx = state.cursorPos.x, cy = state.cursorPos.y;
-            if (state.drunkTimer > 0) {
-                const w = Math.min(state.drunkTimer / 2, 1) * 12;
-                cx += Math.sin(t * 7) * w;
-                cy += Math.cos(t * 9) * w;
+            // Crosshair (desktop only — no persistent cursor on touch)
+            if (!isTouchDevice) {
+                let cx = state.cursorPos.x, cy = state.cursorPos.y;
+                if (state.drunkTimer > 0) {
+                    const w = Math.min(state.drunkTimer / 2, 1) * 12;
+                    cx += Math.sin(t * 7) * w;
+                    cy += Math.cos(t * 9) * w;
+                }
+                drawCrosshair(cx, cy);
             }
-            drawCrosshair(cx, cy);
         }
     }
 
@@ -1843,6 +1864,52 @@ function gameLoop(timestamp) {
 
 // ==================== INPUT ====================
 
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+function startGame() {
+    if (state.screen === 'title') {
+        state.screen = 'playing';
+        if (!isTouchDevice) canvas.style.cursor = 'none';
+    } else if (state.screen === 'gameover') {
+        initState();
+        state.screen = 'playing';
+        state.mousePos.x = canvas.width / 2;
+        state.mousePos.y = canvas.height / 2;
+        if (!isTouchDevice) canvas.style.cursor = 'none';
+    }
+}
+
+function throwSouvlaki(x, y) {
+    if (state.screen !== 'playing') return;
+    if (state.souvlakiCount <= 0) return;
+
+    state.souvlakiCount--;
+    state.bait = {
+        x, y,
+        radius: 400,
+        life: 12,
+        maxLife: 12,
+    };
+    addFloatingText(x, y - 20, 'Souvlaki bait!', '#ff9944', 16);
+    spawnParticles(x, y, '#e8c88a', 8, 0.5);
+}
+
+// Souvlaki button hit test (bottom-right corner)
+const SOUVLAKI_BTN = { w: 70, h: 50, margin: 15 };
+function getSouvlakiBtnRect() {
+    return {
+        x: canvas.width - SOUVLAKI_BTN.w - SOUVLAKI_BTN.margin,
+        y: canvas.height - SOUVLAKI_BTN.h - SOUVLAKI_BTN.margin,
+        w: SOUVLAKI_BTN.w,
+        h: SOUVLAKI_BTN.h,
+    };
+}
+function hitSouvlakiBtn(px, py) {
+    const r = getSouvlakiBtnRect();
+    return px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
+}
+
+// --- Mouse input ---
 canvas.addEventListener('mousemove', (e) => {
     state.cursorPos.x = e.clientX;
     state.cursorPos.y = e.clientY;
@@ -1857,37 +1924,44 @@ canvas.addEventListener('click', (e) => {
 });
 
 window.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        if (state.screen === 'title') {
-            state.screen = 'playing';
-            canvas.style.cursor = 'none';
-        } else if (state.screen === 'gameover') {
-            initState();
-            state.screen = 'playing';
-            state.mousePos.x = canvas.width / 2;
-            state.mousePos.y = canvas.height / 2;
-            canvas.style.cursor = 'none';
-        }
-    }
+    if (e.key === 'Enter') startGame();
 });
 
-// Right-click: throw souvlaki bait
 canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    if (state.screen !== 'playing') return;
-    if (state.souvlakiCount <= 0) return;
-
-    state.souvlakiCount--;
-    state.bait = {
-        x: e.clientX,
-        y: e.clientY,
-        radius: 400,
-        life: 12,
-        maxLife: 12,
-    };
-    addFloatingText(e.clientX, e.clientY - 20, 'Souvlaki bait!', '#ff9944', 16);
-    spawnParticles(e.clientX, e.clientY, '#e8c88a', 8, 0.5);
+    throwSouvlaki(e.clientX, e.clientY);
 });
+
+// --- Touch input ---
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const tx = touch.clientX;
+    const ty = touch.clientY;
+
+    if (state.screen !== 'playing') {
+        startGame();
+        return;
+    }
+
+    // Check souvlaki button
+    if (isTouchDevice && state.souvlakiCount > 0 && hitSouvlakiBtn(tx, ty)) {
+        // Throw bait at center of screen (since no cursor position on mobile)
+        throwSouvlaki(state.mousePos.x + (Math.random() - 0.5) * 100, state.mousePos.y + 120);
+        return;
+    }
+
+    state.cursorPos.x = tx;
+    state.cursorPos.y = ty;
+    shootWater();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    state.cursorPos.x = touch.clientX;
+    state.cursorPos.y = touch.clientY;
+}, { passive: false });
 
 // ==================== INIT ====================
 initState();
