@@ -13,12 +13,17 @@ Open `index.html` in a browser.
 - **Zora** (black & white cat) is friendly — if she reaches the mouse, you gain a life. Don't accidentally scare her!
 - **Water is limited** — watch the supply bar, it regenerates over time
 - Chain hits for **combo multipliers**
+- **Pickups** appear on the map — shoot them with water to collect:
+  - **KEO** (yellow) — mouse gets drunk, aim wobbles for 8 seconds
+  - **Souvlaki** — adds to inventory. **Right-click** to throw as bait, enemies go to it instead of you
+  - **Easter Egg** (red) — explodes on hit, scares all enemies in radius
 
 ## Features
 
 - Satellite map of Cyprus (ESA) as the game background
 - Progressive difficulty — cats spawn faster, lions and tigers join over time
 - Multi-hit enemies with HP bars and knockback
+- Cyprus-themed pickups: KEO beer, souvlaki bait, Easter eggs
 - Combo scoring system with milestones
 - Particle effects, screen shake, floating text
 - High score saved in localStorage
