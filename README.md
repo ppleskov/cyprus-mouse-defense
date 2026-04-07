@@ -1,5 +1,7 @@
 # Cyprus Mouse Defense
 
+![Cyprus Mouse Defense](preview.png)
+
 Browser-based 2D shooter game. A mouse defends itself from evil cats, lions and tigers on the island of Cyprus by shooting water at them.
 
 ## How to Play
