@@ -1000,7 +1000,7 @@ function drawTitleScreen(t) {
     if (blink) {
         ctx.fillStyle = '#4af';
         ctx.font = `bold ${startSize}px monospace`;
-        ctx.fillText(isTouchDevice ? 'Tap to Start' : 'Tap, Click or Enter to Start', canvas.width / 2, canvas.height / 2 + 180);
+        ctx.fillText(isTouchDevice ? 'Tap to Start' : 'Tap or Enter to Start', canvas.width / 2, canvas.height / 2 + 180);
     }
 
     ctx.shadowBlur = 0;
@@ -1040,7 +1040,7 @@ function drawGameOverScreen(t) {
     if (blink) {
         ctx.fillStyle = '#4af';
         ctx.font = 'bold 20px monospace';
-        ctx.fillText(isTouchDevice ? 'Tap to Play Again' : 'Tap, Click or Enter to Play Again', canvas.width / 2, canvas.height / 2 + 90);
+        ctx.fillText(isTouchDevice ? 'Tap to Play Again' : 'Tap or Enter to Play Again', canvas.width / 2, canvas.height / 2 + 90);
     }
 
     ctx.shadowBlur = 0;
@@ -1928,13 +1928,11 @@ canvas.addEventListener('mousemove', (e) => {
 });
 
 canvas.addEventListener('click', (e) => {
-    if (state.screen !== 'playing') {
-        startGame();
-        return;
+    if (state.screen === 'playing') {
+        state.cursorPos.x = e.clientX;
+        state.cursorPos.y = e.clientY;
+        shootWater();
     }
-    state.cursorPos.x = e.clientX;
-    state.cursorPos.y = e.clientY;
-    shootWater();
 });
 
 window.addEventListener('keydown', (e) => {
